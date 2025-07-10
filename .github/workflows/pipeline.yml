@@ -1,0 +1,36 @@
+name: Deploy React App on Push
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: SSH into server and pull + build
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.VM_HOST }}
+        username: ${{ secrets.VM_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd ${{ secrets.APP_PATH }}
+
+          echo "🧠 Pulling latest changes from repo..."
+          git reset --hard
+          git pull origin main
+
+          echo "📦 Installing dependencies..."
+          npm ci
+
+          echo "⚙️ Building the project..."
+          npm run build
+
+          echo "🔐 Setting permissions..."
+          sudo chmod -R o+r /home/ubuntu/frontend-projects/react-demo-app/build
+
+          echo "🚀 Reloading Nginx..."
+          sudo nginx -t && sudo systemctl reload nginx
