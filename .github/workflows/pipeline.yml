@@ -1,42 +1,4 @@
-# name: Deploy React App on Push
-
-# on:
-#   push:
-#     branches:
-#       - main
-
-# jobs:
-#   deploy:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#     - name: SSH into server and pull + build
-#       uses: appleboy/ssh-action@master
-#       with:
-#         host: ${{ secrets.VM_HOST }}
-#         username: ${{ secrets.VM_USERNAME }}
-#         key: ${{ secrets.SSH_PRIVATE_KEY }}
-#         script: |
-#           cd ${{ secrets.APP_PATH }}
-
-#           echo "🧠 Pulling latest changes from repo..."
-#           git reset --hard
-#           git pull origin main
-
-#           echo "📦 Installing dependencies..."
-#           npm ci
-
-#           echo "⚙️ Building the project..."
-#           npm run build
-
-#           echo "🔐 Setting permissions..."
-#           sudo chmod -R o+r /home/ubuntu/frontend-projects/react-demo-app/build
-
-#           echo "🚀 Reloading Nginx..."
-#           sudo nginx -t && sudo systemctl reload nginx
-
-
-name: Optimized Deploy React App
+name: Deploy React App on Push
 
 on:
   push:
@@ -45,73 +7,30 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest # GitHub-hosted runner, ideal for builds
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4 # Get your repository code onto the runner
+    - name: SSH into server and pull + build
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.VM_HOST }}
+        username: ${{ secrets.VM_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd ${{ secrets.APP_PATH }}
 
-      - name: Set up Node.js environment
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20' # Use a stable LTS version for consistency
+          echo "🧠 Pulling latest changes from repo..."
+          git reset --hard
+          git pull origin main
 
-      - name: Cache Node.js modules
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm # Cache npm's global cache directory
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node- # Fallback key for restoring cache
+          echo "📦 Installing dependencies..."
+          npm ci
 
-      - name: Install dependencies (on runner)
-        run: npm ci # Installs dependencies based on package-lock.json. Will use cache if available.
+          echo "⚙️ Building the project..."
+          npm run build
 
-      - name: Build React App (on runner)
-        run: npm run build # Creates the 'build' directory with optimized static files
+          echo "🔐 Setting permissions..."
+          sudo chmod -R o+r /home/ubuntu/frontend-projects/react-demo-app/build
 
-      - name: Clean existing build directory on VM
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            rm -rf ${{ secrets.APP_PATH }}
-            mkdir -p ${{ secrets.APP_PATH }}
-
-
-      - name: Deploy built application files via SCP
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "build/" # Only transfer the compiled 'build' directory and its contents
-          target: "${{ secrets.APP_PATH }}" # Copies 'build' into APP_PATH, so you'll have APP_PATH/build/
-          # If your Nginx serves directly from APP_PATH and expects the *contents* of build:
-          # source: "build/*" # Copies contents of build, not the build folder itself
-          # target: "${{ secrets.APP_PATH }}"
-          strip_components: 0 # Keep the 'build' directory name if target doesn't include it.
-
-      - name: Set permissions for Nginx
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            # Assuming Nginx serves from APP_PATH/build, grant read access recursively
-            sudo chmod -R o+r ${{ secrets.APP_PATH }}/build
-            # Also ensure the parent directory is traversable for Nginx
-            sudo chmod o+x ${{ secrets.APP_PATH }}
-
-      - name: Reload Nginx
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            # Test Nginx configuration and then reload
-            sudo nginx -t && sudo systemctl reload nginx
+          echo "🚀 Reloading Nginx..."
+          sudo nginx -t && sudo systemctl reload nginx
