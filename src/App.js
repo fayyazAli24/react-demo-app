@@ -1,16 +1,22 @@
-import logo from './logo.svg';
 import './App.css';
 
 function App() {
+  // Function to send data to Flutter
+  const sendDataToFlutter = () => {
+    if (window.FlutterWebviewPostMessage) {
+      window.FlutterWebviewPostMessage("Hello from React!");
+    } else {
+      console.log("Flutter WebView not detected");
+    }
+  };
+
   return (
     <div className="App">
       <header className="App-header">
-        {
-        //  <img src={logo} className="App-logo" alt="logo" />
-        }
         <p>
           Edit <code>src/App.js</code> and save to reload.
         </p>
+
         <a
           className="App-link"
           href="https://reactjs.org"
@@ -19,6 +25,19 @@ function App() {
         >
           Learn React
         </a>
+
+        {/* Button to send data */}
+        <button
+          onClick={sendDataToFlutter}
+          style={{
+            marginTop: "20px",
+            padding: "10px 20px",
+            fontSize: "16px",
+            cursor: "pointer"
+          }}
+        >
+          Send Data to Flutter
+        </button>
       </header>
     </div>
   );
