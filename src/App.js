@@ -6,7 +6,7 @@ function App() {
     if (window.FlutterChannel) {
       window.FlutterChannel.postMessage("Hello from React!");
     } else {
-      console.log("Flutter WebView not detected");
+      console.log("Flutter WebView aint available");
     }
   };
 
