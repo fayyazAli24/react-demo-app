@@ -3,8 +3,8 @@ import './App.css';
 function App() {
   // Function to send data to Flutter
   const sendDataToFlutter = () => {
-    if (window.FlutterWebviewPostMessage) {
-      window.FlutterWebviewPostMessage("Hello from React!");
+    if (window.FlutterChannel) {
+      window.FlutterChannel.postMessage("Hello from React!");
     } else {
       console.log("Flutter WebView not detected");
     }
